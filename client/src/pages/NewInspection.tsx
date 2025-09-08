@@ -127,7 +127,7 @@ export default function NewInspection() {
   ) || [];
 
   const createInspectionMutation = useMutation({
-    mutationFn: async (data: InspectionFormData) => {
+    mutationFn: async (data: InspectionFormData & { status?: string }) => {
       const response = await apiRequest("POST", "/api/inspections", data);
       return await response.json();
     },
@@ -155,6 +155,41 @@ export default function NewInspection() {
       toast({
         title: "Error",
         description: "Failed to create inspection. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const saveDraftMutation = useMutation({
+    mutationFn: async (data: InspectionFormData) => {
+      const draftData = { ...data, status: "draft" };
+      const response = await apiRequest("POST", "/api/inspections", draftData);
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Draft Saved",
+        description: "Your inspection draft has been saved successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      setLocation(`/inspection/${data.id}`);
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to save draft. Please try again.",
         variant: "destructive",
       });
     },
@@ -199,8 +234,21 @@ export default function NewInspection() {
         ...data.bodyData,
         ...counters,
       },
+      status: "completed",
     };
     createInspectionMutation.mutate(finalData);
+  };
+
+  const handleSaveDraft = () => {
+    const currentFormData = form.getValues();
+    const finalData = {
+      ...currentFormData,
+      bodyData: {
+        ...currentFormData.bodyData,
+        ...counters,
+      },
+    };
+    saveDraftMutation.mutate(finalData);
   };
 
   return (
@@ -637,10 +685,18 @@ export default function NewInspection() {
           <Button 
             type="button" 
             variant="outline"
+            onClick={handleSaveDraft}
+            disabled={saveDraftMutation.isPending}
             data-testid="button-save-draft"
           >
-            <Save className="w-4 h-4 mr-2" />
-            Save Draft
+            {saveDraftMutation.isPending ? (
+              "Saving..."
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Save Draft
+              </>
+            )}
           </Button>
           <Button 
             type="submit"
