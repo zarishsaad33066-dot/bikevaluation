@@ -141,21 +141,32 @@ export default function NewInspection() {
       return result;
     },
     onSuccess: (data) => {
-      console.log('Complete inspection success - navigating to:', `/inspection/${data.id}/results`);
+      console.log('🎉 Complete inspection SUCCESS!');
+      console.log('📊 Response data:', data);
+      console.log('🔗 Will navigate to:', `/inspection/${data.id}/results`);
+      
       toast({
         title: "Inspection Completed",
         description: "Your inspection has been completed successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      
       // Navigate to results page
-      console.log('About to navigate to results page...');
+      console.log('🏃‍♂️ Executing navigation...');
       setLocation(`/inspection/${data.id}/results`);
-      console.log('Navigation command sent');
+      console.log('✅ Navigation command completed');
     },
     onError: (error) => {
-      console.error('Complete inspection error:', error);
+      console.error('❌ Complete inspection ERROR:', error);
+      console.error('📋 Error details:', {
+        message: error.message,
+        stack: error.stack,
+        cause: error.cause
+      });
+      
       if (isUnauthorizedError(error)) {
+        console.log('🔐 Unauthorized error - redirecting to login');
         toast({
           title: "Unauthorized",
           description: "You are logged out. Logging in again...",
@@ -262,8 +273,18 @@ export default function NewInspection() {
   };
 
   const onSubmit = (data: InspectionFormData) => {
+    console.log('📝 Form submission started');
+    console.log('📋 Form data received:', data);
+    
     // Validate required fields
     if (!data.make || !data.model || !data.year || !data.chassisNo || !data.engineNo) {
+      console.log('❌ Missing required fields:', {
+        make: data.make,
+        model: data.model,
+        year: data.year,
+        chassisNo: data.chassisNo,
+        engineNo: data.engineNo
+      });
       toast({
         title: "Missing Required Fields",
         description: "Please fill in Make, Model, Year, Chassis Number, and Engine Number.",
@@ -282,7 +303,8 @@ export default function NewInspection() {
       status: "completed",
     };
     
-    console.log('Complete Inspection Data:', finalData);
+    console.log('✅ Validation passed. Submitting complete inspection data:', finalData);
+    console.log('🚀 About to call mutation...');
     createInspectionMutation.mutate(finalData);
   };
 
