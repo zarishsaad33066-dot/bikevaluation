@@ -134,22 +134,44 @@ export default function NewInspection() {
 
   const createInspectionMutation = useMutation({
     mutationFn: async (data: InspectionFormData & { status?: string }) => {
-      console.log('Sending complete inspection data:', data);
+      console.log('🚀 Starting inspection creation...');
       const response = await apiRequest("POST", "/api/inspections", data);
+      
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('❌ API request failed:', response.status, error);
+        throw new Error(`HTTP ${response.status}: ${error}`);
+      }
+      
       const result = await response.json();
-      console.log('Complete inspection response:', result);
+      console.log('✅ Inspection created successfully:', result);
+      
+      if (!result.id) {
+        console.error('❌ No ID in response:', result);
+        throw new Error('Invalid response: missing inspection ID');
+      }
+      
       return result;
     },
     onSuccess: (data) => {
+      console.log('🎉 Mutation success callback triggered');
+      console.log('🔗 Inspection data:', data);
+      console.log('📍 About to navigate to:', `/inspection/${data.id}/results`);
+      
       toast({
         title: "Inspection Completed",
         description: "Your inspection has been completed successfully.",
       });
+      
       queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       
-      // Navigate to results page
-      setLocation(`/inspection/${data.id}/results`);
+      // Small delay to ensure state updates complete
+      setTimeout(() => {
+        console.log('🏃‍♂️ Executing navigation now...');
+        setLocation(`/inspection/${data.id}/results`);
+        console.log('✅ Navigation completed');
+      }, 100);
     },
     onError: (error) => {
       console.error('Complete inspection error:', error);
@@ -261,8 +283,11 @@ export default function NewInspection() {
   };
 
   const onSubmit = (data: InspectionFormData) => {
+    console.log('📝 Complete Inspection button clicked');
+    
     // Validate required fields
     if (!data.make || !data.model || !data.year || !data.chassisNo || !data.engineNo) {
+      console.log('❌ Validation failed - missing fields');
       toast({
         title: "Missing Required Fields",
         description: "Please fill in Make, Model, Year, Chassis Number, and Engine Number.",
@@ -281,6 +306,8 @@ export default function NewInspection() {
       status: "completed",
     };
     
+    console.log('📋 Final data to submit:', finalData);
+    console.log('🚀 Calling mutation...');
     createInspectionMutation.mutate(finalData);
   };
 
