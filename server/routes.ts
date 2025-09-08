@@ -327,7 +327,7 @@ function calculateBodyScore(bodyData: any): number {
     'fair': 1.5,
     'poor': 3.0,
   };
-  score -= fairingConditionPenalties[bodyData.fairingCondition] || 0;
+  score -= fairingConditionPenalties[bodyData.fairingCondition as keyof typeof fairingConditionPenalties] || 0;
   
   return Math.max(0, score);
 }
