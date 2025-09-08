@@ -134,19 +134,25 @@ export default function NewInspection() {
 
   const createInspectionMutation = useMutation({
     mutationFn: async (data: InspectionFormData & { status?: string }) => {
+      console.log('Sending complete inspection data:', data);
       const response = await apiRequest("POST", "/api/inspections", data);
-      return await response.json();
+      const result = await response.json();
+      console.log('Complete inspection response:', result);
+      return result;
     },
     onSuccess: (data) => {
+      console.log('Complete inspection success:', data);
       toast({
-        title: "Inspection Created",
+        title: "Inspection Completed",
         description: "Your inspection has been completed successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      // Navigate to results page
       setLocation(`/inspection/${data.id}/results`);
     },
     onError: (error) => {
+      console.error('Complete inspection error:', error);
       if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
@@ -160,7 +166,7 @@ export default function NewInspection() {
       }
       toast({
         title: "Error",
-        description: "Failed to create inspection. Please try again.",
+        description: "Failed to complete inspection. Please try again.",
         variant: "destructive",
       });
     },
@@ -179,7 +185,8 @@ export default function NewInspection() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      setLocation(`/inspection/${data.id}`);
+      // Navigate to inspection history to show saved draft
+      setLocation("/inspection-history");
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
