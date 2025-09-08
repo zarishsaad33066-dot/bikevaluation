@@ -141,7 +141,7 @@ export default function NewInspection() {
       return result;
     },
     onSuccess: (data) => {
-      console.log('Complete inspection success:', data);
+      console.log('Complete inspection success - navigating to:', `/inspection/${data.id}/results`);
       toast({
         title: "Inspection Completed",
         description: "Your inspection has been completed successfully.",
@@ -149,7 +149,9 @@ export default function NewInspection() {
       queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       // Navigate to results page
+      console.log('About to navigate to results page...');
       setLocation(`/inspection/${data.id}/results`);
+      console.log('Navigation command sent');
     },
     onError: (error) => {
       console.error('Complete inspection error:', error);
