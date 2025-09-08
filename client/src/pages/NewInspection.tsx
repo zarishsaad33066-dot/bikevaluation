@@ -253,6 +253,16 @@ export default function NewInspection() {
   };
 
   const onSubmit = (data: InspectionFormData) => {
+    // Validate required fields
+    if (!data.make || !data.model || !data.year || !data.chassisNo || !data.engineNo) {
+      toast({
+        title: "Missing Required Fields",
+        description: "Please fill in Make, Model, Year, Chassis Number, and Engine Number.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Include counter values in body data
     const finalData = {
       ...data,
@@ -267,12 +277,26 @@ export default function NewInspection() {
 
   const handleSaveDraft = () => {
     const currentFormData = form.getValues();
+    
+    // For drafts, at least make/model/year should be filled
+    if (!currentFormData.make || !currentFormData.model || !currentFormData.year) {
+      toast({
+        title: "Missing Basic Information",
+        description: "Please select Make, Model, and Year before saving draft.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const finalData = {
       ...currentFormData,
+      chassisNo: currentFormData.chassisNo || "DRAFT",
+      engineNo: currentFormData.engineNo || "DRAFT", 
       bodyData: {
         ...currentFormData.bodyData,
         ...counters,
       },
+      status: "draft",
     };
     saveDraftMutation.mutate(finalData);
   };
@@ -303,7 +327,7 @@ export default function NewInspection() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
-                <Label htmlFor="make">Make</Label>
+                <Label htmlFor="make">Make <span className="text-red-500">*</span></Label>
                 <Select
                   onValueChange={(value) => {
                     setSelectedMake(value);
@@ -326,7 +350,7 @@ export default function NewInspection() {
               </div>
 
               <div>
-                <Label htmlFor="model">Model</Label>
+                <Label htmlFor="model">Model <span className="text-red-500">*</span></Label>
                 <Select
                   onValueChange={(value) => form.setValue("model", value)}
                   disabled={!selectedMake}
@@ -346,7 +370,7 @@ export default function NewInspection() {
               </div>
 
               <div>
-                <Label htmlFor="year">Year</Label>
+                <Label htmlFor="year">Year <span className="text-red-500">*</span></Label>
                 <Select onValueChange={(value) => form.setValue("year", parseInt(value))} data-testid="select-year">
                   <SelectTrigger>
                     <SelectValue placeholder="Select Year" />
@@ -362,7 +386,7 @@ export default function NewInspection() {
               </div>
 
               <div>
-                <Label htmlFor="chassisNo">Chassis Number</Label>
+                <Label htmlFor="chassisNo">Chassis Number <span className="text-red-500">*</span></Label>
                 <Input
                   {...form.register("chassisNo")}
                   placeholder="Enter chassis number"
@@ -371,7 +395,7 @@ export default function NewInspection() {
               </div>
 
               <div>
-                <Label htmlFor="engineNo">Engine Number</Label>
+                <Label htmlFor="engineNo">Engine Number <span className="text-red-500">*</span></Label>
                 <Input
                   {...form.register("engineNo")}
                   placeholder="Enter engine number"
