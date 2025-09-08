@@ -272,6 +272,8 @@ export default function NewInspection() {
       },
       status: "completed",
     };
+    
+    console.log('Complete Inspection Data:', finalData);
     createInspectionMutation.mutate(finalData);
   };
 
@@ -292,12 +294,17 @@ export default function NewInspection() {
       ...currentFormData,
       chassisNo: currentFormData.chassisNo || "DRAFT",
       engineNo: currentFormData.engineNo || "DRAFT", 
+      color: currentFormData.color || null,
+      mileage: currentFormData.mileage || null,
+      importSource: currentFormData.importSource || null,
       bodyData: {
         ...currentFormData.bodyData,
         ...counters,
       },
       status: "draft",
     };
+    
+    console.log('Draft Data:', finalData);
     saveDraftMutation.mutate(finalData);
   };
 
