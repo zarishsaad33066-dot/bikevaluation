@@ -53,6 +53,12 @@ export default function NewInspection() {
   });
   const [brakePadValue, setBrakePadValue] = useState([75]);
   const [treadValue, setTreadValue] = useState([80]);
+  const [uploadedPhotos, setUploadedPhotos] = useState<Record<string, File | null>>({
+    "Front View": null,
+    "Rear View": null,
+    "Left Side": null,
+    "Odometer": null,
+  });
 
   const form = useForm<InspectionFormData>({
     resolver: zodResolver(insertInspectionSchema),
@@ -224,6 +230,26 @@ export default function NewInspection() {
       ...form.getValues("tiresData"),
       treadRemaining: value[0],
     });
+  };
+
+  const handlePhotoUpload = (label: string, file: File) => {
+    setUploadedPhotos(prev => ({
+      ...prev,
+      [label]: file
+    }));
+  };
+
+  const handlePhotoClick = (label: string) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        handlePhotoUpload(label, file);
+      }
+    };
+    input.click();
   };
 
   const onSubmit = (data: InspectionFormData) => {
@@ -666,16 +692,34 @@ export default function NewInspection() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {["Front View", "Rear View", "Left Side", "Odometer"].map((label) => (
-                <div
-                  key={label}
-                  className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer"
-                  data-testid={`upload-${label.toLowerCase().replace(" ", "-")}`}
-                >
-                  <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">{label}</p>
-                </div>
-              ))}
+              {["Front View", "Rear View", "Left Side", "Odometer"].map((label) => {
+                const hasPhoto = uploadedPhotos[label];
+                return (
+                  <div
+                    key={label}
+                    onClick={() => handlePhotoClick(label)}
+                    className={cn(
+                      "border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer",
+                      hasPhoto ? "border-green-500 bg-green-50" : "border-border"
+                    )}
+                    data-testid={`upload-${label.toLowerCase().replace(" ", "-")}`}
+                  >
+                    {hasPhoto ? (
+                      <>
+                        <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                        <p className="text-sm text-green-700 font-medium">{label}</p>
+                        <p className="text-xs text-green-600 mt-1">Uploaded</p>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">{label}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Click to upload</p>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
