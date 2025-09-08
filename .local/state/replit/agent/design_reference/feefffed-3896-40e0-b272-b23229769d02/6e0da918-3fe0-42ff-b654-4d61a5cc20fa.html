@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bike Inspection & Valuation System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    borderRadius: {
+                        lg: "var(--radius)",
+                        md: "calc(var(--radius) - 2px)",
+                        sm: "calc(var(--radius) - 4px)",
+                    },
+                    colors: {
+                        background: "var(--background)",
+                        foreground: "var(--foreground)",
+                        card: {
+                            DEFAULT: "var(--card)",
+                            foreground: "var(--card-foreground)",
+                        },
+                        primary: {
+                            DEFAULT: "var(--primary)",
+                            foreground: "var(--primary-foreground)",
+                        },
+                        secondary: {
+                            DEFAULT: "var(--secondary)",
+                            foreground: "var(--secondary-foreground)",
+                        },
+                        muted: {
+                            DEFAULT: "var(--muted)",
+                            foreground: "var(--muted-foreground)",
+                        },
+                        accent: {
+                            DEFAULT: "var(--accent)",
+                            foreground: "var(--accent-foreground)",
+                        },
+                        destructive: {
+                            DEFAULT: "var(--destructive)",
+                            foreground: "var(--destructive-foreground)",
+                        },
+                        border: "var(--border)",
+                        input: "var(--input)",
+                        ring: "var(--ring)",
+                        success: "var(--success)",
+                        warning: "var(--warning)",
+                        error: "var(--error)",
+                    },
+                    fontFamily: {
+                        sans: ["Roboto", "ui-sans-serif", "system-ui"],
+                    }
+                },
+            }
+        };
+    </script>
+    <style>
+        :root {
+            --radius: 0.5rem;
+            --background: hsl(0 0% 98%);
+            --foreground: hsl(222.2 84% 4.9%);
+            --card: hsl(0 0% 100%);
+            --card-foreground: hsl(222.2 84% 4.9%);
+            --primary: hsl(207 90% 44%);
+            --primary-foreground: hsl(210 40% 98%);
+            --secondary: hsl(174 100% 24%);
+            --secondary-foreground: hsl(210 40% 98%);
+            --muted: hsl(210 40% 96%);
+            --muted-foreground: hsl(215.4 16.3% 46.9%);
+            --accent: hsl(210 40% 96%);
+            --accent-foreground: hsl(222.2 84% 4.9%);
+            --destructive: hsl(0 84.2% 60.2%);
+            --destructive-foreground: hsl(210 40% 98%);
+            --border: hsl(214.3 31.8% 91.4%);
+            --input: hsl(214.3 31.8% 91.4%);
+            --ring: hsl(207 90% 44%);
+            --success: hsl(122 40% 50%);
+            --warning: hsl(36 100% 50%);
+            --error: hsl(0 84% 60%);
+        }
+
+        .dark {
+            --background: hsl(222.2 84% 4.9%);
+            --foreground: hsl(210 40% 98%);
+            --card: hsl(222.2 84% 4.9%);
+            --card-foreground: hsl(210 40% 98%);
+            --primary: hsl(207 90% 54%);
+            --primary-foreground: hsl(222.2 84% 4.9%);
+            --secondary: hsl(174 100% 34%);
+            --secondary-foreground: hsl(222.2 84% 4.9%);
+            --muted: hsl(217.2 32.6% 17.5%);
+            --muted-foreground: hsl(215 20.2% 65.1%);
+            --accent: hsl(217.2 32.6% 17.5%);
+            --accent-foreground: hsl(210 40% 98%);
+            --destructive: hsl(0 62.8% 50.6%);
+            --destructive-foreground: hsl(210 40% 98%);
+            --border: hsl(217.2 32.6% 17.5%);
+            --input: hsl(217.2 32.6% 17.5%);
+            --ring: hsl(207 90% 54%);
+            --success: hsl(122 40% 50%);
+            --warning: hsl(36 100% 50%);
+            --error: hsl(0 62% 51%);
+        }
+
+        .sidebar-transition {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .gauge-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+        }
+
+        .score-excellent { color: hsl(122 40% 50%); }
+        .score-good { color: hsl(36 100% 50%); }
+        .score-poor { color: hsl(0 84% 60%); }
+
+        @media (max-width: 768px) {
+            .sidebar-hidden {
+                transform: translateX(-100%);
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-background text-foreground font-sans">
+    
+    <!-- @COMPONENT: AppLayout -->
+    <div class="flex min-h-screen">
+        
+        <!-- @COMPONENT: Sidebar -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border sidebar-transition md:relative md:translate-x-0">
+            <div class="flex flex-col h-full">
+                <!-- Logo/Header -->
+                <div class="p-6 border-b border-border">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                            <i class="fas fa-motorcycle text-primary-foreground"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-lg font-semibold text-foreground">BikeCheck Pro</h1>
+                            <p class="text-xs text-muted-foreground">Inspection System</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="flex-1 p-4 space-y-2">
+                    <a href="#dashboard" onclick="showSection('dashboard')" class="nav-item flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors">
+                        <i class="fas fa-tachometer-alt w-5"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    
+                    <a href="#new-inspection" onclick="showSection('new-inspection')" class="nav-item flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors">
+                        <i class="fas fa-plus-circle w-5"></i>
+                        <span>New Inspection</span>
+                    </a>
+                    
+                    <a href="#history" onclick="showSection('history')" class="nav-item flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors">
+                        <i class="fas fa-history w-5"></i>
+                        <span>Inspection History</span>
+                    </a>
+                    
+                    <a href="#reports" onclick="showSection('reports')" class="nav-item flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors">
+                        <i class="fas fa-file-pdf w-5"></i>
+                        <span>Reports</span>
+                    </a>
+                    
+                    <div class="border-t border-border my-2"></div>
+                    
+                    <a href="#admin" onclick="showSection('admin')" class="nav-item flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors">
+                        <i class="fas fa-cogs w-5"></i>
+                        <span>Admin Panel</span>
+                        <span class="ml-auto text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded">Admin</span>
+                    </a>
+                    
+                    <a href="#profile" onclick="showSection('profile')" class="nav-item flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors">
+                        <i class="fas fa-user w-5"></i>
+                        <span>Profile Settings</span>
+                    </a>
+                </nav>
+
+                <!-- Footer -->
+                <div class="p-4 border-t border-border">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-sm text-muted-foreground">Theme</span>
+                        <button onclick="toggleTheme()" class="p-2 rounded-md hover:bg-accent transition-colors">
+                            <i id="theme-icon" class="fas fa-moon"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center space-x-3">
+                        <!-- A professional headshot of a Pakistani mechanic in work uniform -->
+                        <img src="https://images.unsplash.com/photo-1582750433449-648ed127bb54?ixlib=rb-4.0.3&auto=format&fit=crop&w=64&h=64" alt="User avatar" class="w-10 h-10 rounded-full">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-foreground truncate" data-bind="user.name">Ahmad Hassan</p>
+                            <p class="text-xs text-muted-foreground truncate">Senior Mechanic</p>
+                        </div>
+                        <button class="p-1 rounded hover:bg-accent">
+                            <i class="fas fa-sign-out-alt text-muted-foreground"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        <!-- @END_COMPONENT: Sidebar -->
+
+        <!-- Main Content -->
+        <main class="flex-1 min-w-0">
+            <!-- Top Bar (Mobile) -->
+            <div class="md:hidden bg-card border-b border-border p-4 flex items-center justify-between">
+                <button onclick="toggleSidebar()" class="p-2 rounded-md hover:bg-accent">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="text-lg font-semibold">BikeCheck Pro</h1>
+                <div class="w-10"></div>
+            </div>
+
+            <!-- @COMPONENT: Dashboard Section -->
+            <section id="dashboard" class="section p-6">
+                <div class="max-w-7xl mx-auto">
+                    <!-- Header -->
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold text-foreground mb-2">Dashboard</h2>
+                        <p class="text-muted-foreground">Overview of recent inspections and system activity</p>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-muted-foreground">Total Inspections</p>
+                                    <p class="text-3xl font-bold text-foreground" data-bind="stats.totalInspections">247</p>
+                                </div>
+                                <div class="p-3 bg-primary/10 rounded-full">
+                                    <i class="fas fa-clipboard-check text-primary"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-muted-foreground">This Month</p>
+                                    <p class="text-3xl font-bold text-foreground" data-bind="stats.monthlyInspections">23</p>
+                                </div>
+                                <div class="p-3 bg-success/10 rounded-full">
+                                    <i class="fas fa-calendar text-success"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-muted-foreground">Avg Score</p>
+                                    <p class="text-3xl font-bold text-warning" data-bind="stats.averageScore">7.2</p>
+                                </div>
+                                <div class="p-3 bg-warning/10 rounded-full">
+                                    <i class="fas fa-star text-warning"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-muted-foreground">Pending Reports</p>
+                                    <p class="text-3xl font-bold text-error" data-bind="stats.pendingReports">5</p>
+                                </div>
+                                <div class="p-3 bg-error/10 rounded-full">
+                                    <i class="fas fa-clock text-error"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Inspections -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Recent Inspections Table -->
+                        <div class="bg-card rounded-lg border border-border">
+                            <div class="p-6 border-b border-border">
+                                <h3 class="text-lg font-semibold text-foreground">Recent Inspections</h3>
+                            </div>
+                            <div class="p-6">
+                                <!-- @MAP: recentInspections.map(inspection => ( -->
+                                <div class="space-y-4">
+                                    <div class="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-motorcycle text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-medium text-foreground" data-bind="inspection.model">Honda CB150F</p>
+                                                <p class="text-sm text-muted-foreground" data-bind="inspection.date">2024-01-15</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-success/10 text-success" data-bind="inspection.score">8.5/10</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-motorcycle text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-medium text-foreground" data-bind="inspection.model">Yamaha YBR125</p>
+                                                <p class="text-sm text-muted-foreground" data-bind="inspection.date">2024-01-14</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-warning/10 text-warning" data-bind="inspection.score">6.8/10</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-motorcycle text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-medium text-foreground" data-bind="inspection.model">Suzuki GS150SE</p>
+                                                <p class="text-sm text-muted-foreground" data-bind="inspection.date">2024-01-13</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-error/10 text-error" data-bind="inspection.score">4.2/10</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- @END_MAP )) -->
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="bg-card rounded-lg border border-border">
+                            <div class="p-6 border-b border-border">
+                                <h3 class="text-lg font-semibold text-foreground">Quick Actions</h3>
+                            </div>
+                            <div class="p-6 space-y-4">
+                                <button onclick="showSection('new-inspection')" class="w-full flex items-center space-x-3 p-4 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors">
+                                    <i class="fas fa-plus-circle"></i>
+                                    <span class="font-medium">Start New Inspection</span>
+                                </button>
+
+                                <button onclick="showSection('history')" class="w-full flex items-center space-x-3 p-4 border border-border rounded-lg hover:bg-accent transition-colors">
+                                    <i class="fas fa-search"></i>
+                                    <span class="font-medium">Search Inspections</span>
+                                </button>
+
+                                <button onclick="showSection('reports')" class="w-full flex items-center space-x-3 p-4 border border-border rounded-lg hover:bg-accent transition-colors">
+                                    <i class="fas fa-download"></i>
+                                    <span class="font-medium">Generate Report</span>
+                                </button>
+
+                                <button class="w-full flex items-center space-x-3 p-4 border border-border rounded-lg hover:bg-accent transition-colors" data-implementation="Export functionality">
+                                    <i class="fas fa-file-export"></i>
+                                    <span class="font-medium">Export Data</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- @END_COMPONENT: Dashboard -->
+
+            <!-- @COMPONENT: New Inspection Section -->
+            <section id="new-inspection" class="section hidden p-6">
+                <div class="max-w-4xl mx-auto">
+                    <!-- Header -->
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold text-foreground mb-2">New Inspection</h2>
+                        <p class="text-muted-foreground">Complete bike inspection form</p>
+                    </div>
+
+                    <form class="space-y-8" data-event="submit:handleInspectionSubmit">
+                        
+                        <!-- Bike Information Card -->
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <h3 class="text-xl font-semibold text-foreground mb-6 flex items-center">
+                                <i class="fas fa-motorcycle mr-3 text-primary"></i>
+                                Bike Information
+                            </h3>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Make *</label>
+                                    <select class="w-full px-4 py-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent" data-bind="bike.make" required>
+                                        <option value="">Select Make</option>
+                                        <option value="honda">Honda</option>
+                                        <option value="yamaha">Yamaha</option>
+                                        <option value="suzuki">Suzuki</option>
+                                        <option value="kawasaki">Kawasaki</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Model *</label>
+                                    <input type="text" class="w-full px-4 py-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="e.g., CB150F" data-bind="bike.model" required>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Year *</label>
+                                    <input type="number" min="1990" max="2024" class="w-full px-4 py-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="2020" data-bind="bike.year" required>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Chassis No *</label>
+                                    <input type="text" class="w-full px-4 py-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="Enter chassis number" data-bind="bike.chassisNo" required>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Engine No *</label>
+                                    <input type="text" class="w-full px-4 py-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="Enter engine number" data-bind="bike.engineNo" required>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Color</label>
+                                    <input type="text" class="w-full px-4 py-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="e.g., Red" data-bind="bike.color">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Mileage (KM)</label>
+                                    <input type="number" class="w-full px-4 py-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="25000" data-bind="bike.mileage">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Import Source</label>
+                                    <select class="w-full px-4 py-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent" data-bind="bike.importSource">
+                                        <option value="">Select Source</option>
+                                        <option value="japan">Japan</option>
+                                        <option value="local">Local</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Photo Upload Section -->
+                            <div class="mt-8">
+                                <h4 class="text-lg font-medium text-foreground mb-4">Bike Photos</h4>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div class="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors" data-mock-image="true" data-implementation="File upload component for front view">
+                                        <i class="fas fa-camera text-3xl text-muted-foreground mb-2"></i>
+                                        <p class="text-sm text-muted-foreground">Front View</p>
+                                    </div>
+                                    <div class="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors" data-mock-image="true" data-implementation="File upload component for rear view">
+                                        <i class="fas fa-camera text-3xl text-muted-foreground mb-2"></i>
+                                        <p class="text-sm text-muted-foreground">Rear View</p>
+                                    </div>
+                                    <div class="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors" data-mock-image="true" data-implementation="File upload component for left side">
+                                        <i class="fas fa-camera text-3xl text-muted-foreground mb-2"></i>
+                                        <p class="text-sm text-muted-foreground">Left Side</p>
+                                    </div>
+                                    <div class="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors" data-mock-image="true" data-implementation="File upload component for odometer">
+                                        <i class="fas fa-camera text-3xl text-muted-foreground mb-2"></i>
+                                        <p class="text-sm text-muted-foreground">Odometer</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Engine Inspection -->
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <h3 class="text-xl font-semibold text-foreground mb-6 flex items-center">
+                                <i class="fas fa-cog mr-3 text-primary"></i>
+                                Engine Inspection (40% Weight)
+                            </h3>
+
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-3">Oil Leaks</label>
+                                    <div class="flex space-x-4">
+                                        <label class="flex items-center">
+                                            <input type="radio" name="oil_leaks" value="none" class="mr-2" data-bind="inspection.engine.oilLeaks">
+                                            <span class="text-sm">None</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="radio" name="oil_leaks" value="minor" class="mr-2" data-bind="inspection.engine.oilLeaks">
+                                            <span class="text-sm">Minor</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="radio" name="oil_leaks" value="major" class="mr-2" data-bind="inspection.engine.oilLeaks">
+                                            <span class="text-sm">Major</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-3">Smoke</label>
+                                    <div class="flex space-x-4">
+                                        <label class="flex items-center">
+                                            <input type="radio" name="smoke" value="none" class="mr-2" data-bind="inspection.engine.smoke">
+                                            <span class="text-sm">None</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="radio" name="smoke" value="light" class="mr-2" data-bind="inspection.engine.smoke">
+                                            <span class="text-sm">Light</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="radio" name="smoke" value="heavy" class="mr-2" data-bind="inspection.engine.smoke">
+                                            <span class="text-sm">Heavy</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <label class="flex items-center space-x-3">
+                                        <input type="checkbox" class="rounded border-border" data-bind="inspection.engine.abnormalNoise">
+                                        <span class="text-sm font-medium text-foreground">Abnormal Engine Noise</span>
+                                    </label>
+
+                                    <label class="flex items-center space-x-3">
+                                        <input type="checkbox" class="rounded border-border" data-bind="inspection.engine.hardStart">
+                                        <span class="text-sm font-medium text-foreground">Hard Start Issues</span>
+                                    </label>
+
+                                    <label class="flex items-center space-x-3">
+                                        <input type="checkbox" class="rounded border-border" data-bind="inspection.engine.overheating">
+                                        <span class="text-sm font-medium text-foreground">Overheating</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Frame Inspection -->
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <h3 class="text-xl font-semibold text-foreground mb-6 flex items-center">
+                                <i class="fas fa-square mr-3 text-primary"></i>
+                                Frame Inspection (15% Weight)
+                            </h3>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" class="rounded border-border" data-bind="inspection.frame.cracks">
+                                    <span class="text-sm font-medium text-foreground">Frame Cracks</span>
+                                </label>
+
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" class="rounded border-border" data-bind="inspection.frame.rust">
+                                    <span class="text-sm font-medium text-foreground">Rust Issues</span>
+                                </label>
+
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" class="rounded border-border" data-bind="inspection.frame.bends">
+                                    <span class="text-sm font-medium text-foreground">Frame Bends</span>
+                                </label>
+
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" class="rounded border-border" data-bind="inspection.frame.repaintMarks">
+                                    <span class="text-sm font-medium text-foreground">Repaint Marks</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Brakes Inspection -->
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <h3 class="text-xl font-semibold text-foreground mb-6 flex items-center">
+                                <i class="fas fa-stop-circle mr-3 text-primary"></i>
+                                Brakes Inspection (10% Weight)
+                            </h3>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Front Brake Pad Remaining (%)</label>
+                                    <input type="number" min="0" max="100" class="w-full px-4 py-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="75" data-bind="inspection.brakes.frontPadRemaining">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Rear Brake Pad Remaining (%)</label>
+                                    <input type="number" min="0" max="100" class="w-full px-4 py-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="80" data-bind="inspection.brakes.rearPadRemaining">
+                                </div>
+
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" class="rounded border-border" data-bind="inspection.brakes.discWarp">
+                                    <span class="text-sm font-medium text-foreground">Disc Warping</span>
+                                </label>
+
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" class="rounded border-border" data-bind="inspection.brakes.fluidLeak">
+                                    <span class="text-sm font-medium text-foreground">Brake Fluid Leak</span>
+                                </label>
+
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" class="rounded border-border" data-bind="inspection.brakes.absWorking">
+                                    <span class="text-sm font-medium text-foreground">ABS Working</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Tires Inspection -->
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <h3 class="text-xl font-semibold text-foreground mb-6 flex items-center">
+                                <i class="fas fa-circle mr-3 text-primary"></i>
+                                Tires Inspection (10% Weight)
+                            </h3>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Front Tire Tread Remaining (%)</label>
+                                    <input type="number" min="0" max="100" class="w-full px-4 py-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="60" data-bind="inspection.tires.frontTreadRemaining">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Rear Tire Tread Remaining (%)</label>
+                                    <input type="number" min="0" max="100" class="w-full px-4 py-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="55" data-bind="inspection.tires.rearTreadRemaining">
+                                </div>
+
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" class="rounded border-border" data-bind="inspection.tires.cracks">
+                                    <span class="text-sm font-medium text-foreground">Tire Cracks</span>
+                                </label>
+
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" class="rounded border-border" data-bind="inspection.tires.mismatchedPair">
+                                    <span class="text-sm font-medium text-foreground">Mismatched Pair</span>
+                                </label>
+
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" class="rounded border-border" data-bind="inspection.tires.ageOver5Years">
+                                    <span class="text-sm font-medium text-foreground">Age > 5 Years</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Body/Exterior Inspection -->
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <h3 class="text-xl font-semibold text-foreground mb-6 flex items-center">
+                                <i class="fas fa-paint-brush mr-3 text-primary"></i>
+                                Body/Exterior Inspection (8% Weight)
+                            </h3>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Minor Scratches Count</label>
+                                    <input type="number" min="0" class="w-full px-4 py-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="2" data-bind="inspection.body.minorScratchCount">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Major Scratches Count</label>
+                                    <input type="number" min="0" class="w-full px-4 py-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="0" data-bind="inspection.body.majorScratchCount">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Small Dents Count</label>
+                                    <input type="number" min="0" class="w-full px-4 py-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="1" data-bind="inspection.body.smallDentCount">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Big Dents Count</label>
+                                    <input type="number" min="0" class="w-full px-4 py-3 bg-input border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="0" data-bind="inspection.body.bigDentCount">
+                                </div>
+
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" class="rounded border-border" data-bind="inspection.body.cracks">
+                                    <span class="text-sm font-medium text-foreground">Body Cracks</span>
+                                </label>
+
+                                <label class="flex items-center space-x-3">
+                                    <input type="checkbox" class="rounded border-border" data-bind="inspection.body.repaintPanels">
+                                    <span class="text-sm font-medium text-foreground">Repainted Panels</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Electricals & Documents -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Electricals -->
+                            <div class="bg-card rounded-lg border border-border p-6">
+                                <h3 class="text-xl font-semibold text-foreground mb-6 flex items-center">
+                                    <i class="fas fa-bolt mr-3 text-primary"></i>
+                                    Electricals (5% Weight)
+                                </h3>
+
+                                <div class="space-y-4">
+                                    <label class="flex items-center space-x-3">
+                                        <input type="checkbox" class="rounded border-border" data-bind="inspection.electricals.lightsWorking">
+                                        <span class="text-sm font-medium text-foreground">All Lights Working</span>
+                                    </label>
+
+                                    <label class="flex items-center space-x-3">
+                                        <input type="checkbox" class="rounded border-border" data-bind="inspection.electricals.indicatorsWorking">
+                                        <span class="text-sm font-medium text-foreground">Indicators Working</span>
+                                    </label>
+
+                                    <label class="flex items-center space-x-3">
+                                        <input type="checkbox" class="rounded border-border" data-bind="inspection.electricals.hornWorking">
+                                        <span class="text-sm font-medium text-foreground">Horn Working</span>
+                                    </label>
+
+                                    <label class="flex items-center space-x-3">
+                                        <input type="checkbox" class="rounded border-border" data-bind="inspection.electricals.starterWorking">
+                                        <span class="text-sm font-medium text-foreground">Electric Starter Working</span>
+                                    </label>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-foreground mb-3">Battery Condition</label>
+                                        <div class="flex space-x-4">
+                                            <label class="flex items-center">
+                                                <input type="radio" name="battery_condition" value="good" class="mr-2" data-bind="inspection.electricals.batteryCondition">
+                                                <span class="text-sm">Good</span>
+                                            </label>
+                                            <label class="flex items-center">
+                                                <input type="radio" name="battery_condition" value="weak" class="mr-2" data-bind="inspection.electricals.batteryCondition">
+                                                <span class="text-sm">Weak</span>
+                                            </label>
+                                            <label class="flex items-center">
+                                                <input type="radio" name="battery_condition" value="dead" class="mr-2" data-bind="inspection.electricals.batteryCondition">
+                                                <span class="text-sm">Dead</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Documents -->
+                            <div class="bg-card rounded-lg border border-border p-6">
+                                <h3 class="text-xl font-semibold text-foreground mb-6 flex items-center">
+                                    <i class="fas fa-file-text mr-3 text-primary"></i>
+                                    Documents (2% Weight)
+                                </h3>
+
+                                <div class="space-y-4">
+                                    <label class="flex items-center space-x-3">
+                                        <input type="checkbox" class="rounded border-border" data-bind="inspection.documents.registrationValid">
+                                        <span class="text-sm font-medium text-foreground">Valid Registration</span>
+                                    </label>
+
+                                    <label class="flex items-center space-x-3">
+                                        <input type="checkbox" class="rounded border-border" data-bind="inspection.documents.customsPapers">
+                                        <span class="text-sm font-medium text-foreground">Import/Customs Papers</span>
+                                    </label>
+
+                                    <label class="flex items-center space-x-3">
+                                        <input type="checkbox" class="rounded border-border" data-bind="inspection.documents.serviceRecords">
+                                        <span class="text-sm font-medium text-foreground">Service Records Available</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex flex-col sm:flex-row gap-4 pt-6">
+                            <button type="submit" class="flex-1 bg-primary text-primary-foreground px-8 py-4 rounded-lg font-medium hover:bg-primary/90 transition-colors" data-implementation="Calculate inspection score and navigate to results">
+                                Calculate Score & Generate Report
+                            </button>
+                            <button type="button" class="flex-1 bg-secondary text-secondary-foreground px-8 py-4 rounded-lg font-medium hover:bg-secondary/90 transition-colors" data-implementation="Save as draft">
+                                Save as Draft
+                            </button>
+                            <button type="button" class="px-8 py-4 border border-border rounded-lg font-medium hover:bg-accent transition-colors" data-implementation="Clear form">
+                                Clear Form
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+            <!-- @END_COMPONENT: New Inspection -->
+
+            <!-- @COMPONENT: Inspection Results Section -->
+            <section id="results" class="section hidden p-6">
+                <div class="max-w-4xl mx-auto">
+                    <!-- Header -->
+                    <div class="mb-8 text-center">
+                        <h2 class="text-3xl font-bold text-foreground mb-2">Inspection Results</h2>
+                        <p class="text-muted-foreground">Honda CB150F - Chassis: CB150F123456</p>
+                    </div>
+
+                    <!-- Score Display -->
+                    <div class="bg-card rounded-lg border border-border p-8 mb-8 text-center">
+                        <div class="gauge-container mb-6">
+                            <canvas id="scoreGauge" width="200" height="200"></canvas>
+                        </div>
+                        <div class="mb-4">
+                            <span class="text-6xl font-bold score-good" data-bind="inspection.finalScore">7.2</span>
+                            <span class="text-2xl text-muted-foreground">/10</span>
+                        </div>
+                        <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-warning/10 text-warning">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Good Condition - Minor Issues
+                        </div>
+                        
+                        <!-- Estimated Market Value -->
+                        <div class="mt-6 p-4 bg-muted/50 rounded-lg">
+                            <p class="text-sm text-muted-foreground mb-1">Estimated Market Value</p>
+                            <p class="text-2xl font-bold text-foreground" data-bind="inspection.estimatedValue">PKR 185,000</p>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <!-- Radar Chart -->
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <h3 class="text-lg font-semibold text-foreground mb-4">Component Breakdown</h3>
+                            <canvas id="radarChart" width="300" height="300"></canvas>
+                        </div>
+
+                        <!-- Bar Chart -->
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <h3 class="text-lg font-semibold text-foreground mb-4">Score by Category</h3>
+                            <canvas id="barChart" width="300" height="300"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Issues Summary -->
+                    <div class="bg-card rounded-lg border border-border p-6 mb-8">
+                        <h3 class="text-lg font-semibold text-foreground mb-4">Major Issues Found</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-3 p-3 bg-error/10 rounded-lg">
+                                <i class="fas fa-exclamation-circle text-error"></i>
+                                <div>
+                                    <p class="font-medium text-foreground">Brake Pads Low</p>
+                                    <p class="text-sm text-muted-foreground">Front brake pads at 30% - Replacement recommended</p>
+                                </div>
+                                <span class="ml-auto text-sm font-medium text-error">-0.8 points</span>
+                            </div>
+                            
+                            <div class="flex items-center space-x-3 p-3 bg-warning/10 rounded-lg">
+                                <i class="fas fa-exclamation-triangle text-warning"></i>
+                                <div>
+                                    <p class="font-medium text-foreground">Minor Oil Leak</p>
+                                    <p class="text-sm text-muted-foreground">Small oil leak detected from engine gasket</p>
+                                </div>
+                                <span class="ml-auto text-sm font-medium text-warning">-0.5 points</span>
+                            </div>
+
+                            <div class="flex items-center space-x-3 p-3 bg-warning/10 rounded-lg">
+                                <i class="fas fa-paint-brush text-warning"></i>
+                                <div>
+                                    <p class="font-medium text-foreground">Cosmetic Issues</p>
+                                    <p class="text-sm text-muted-foreground">3 minor scratches on fuel tank</p>
+                                </div>
+                                <span class="ml-auto text-sm font-medium text-warning">-0.3 points</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button class="flex-1 bg-primary text-primary-foreground px-8 py-4 rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center" data-implementation="Generate PDF report">
+                            <i class="fas fa-file-pdf mr-2"></i>
+                            Generate PDF Report
+                        </button>
+                        <button class="flex-1 bg-secondary text-secondary-foreground px-8 py-4 rounded-lg font-medium hover:bg-secondary/90 transition-colors flex items-center justify-center" data-implementation="Share via WhatsApp">
+                            <i class="fab fa-whatsapp mr-2"></i>
+                            Share via WhatsApp
+                        </button>
+                        <button class="px-8 py-4 border border-border rounded-lg font-medium hover:bg-accent transition-colors flex items-center justify-center" data-implementation="Email report">
+                            <i class="fas fa-envelope mr-2"></i>
+                            Email Report
+                        </button>
+                    </div>
+                </div>
+            </section>
+            <!-- @END_COMPONENT: Inspection Results -->
+
+            <!-- @COMPONENT: Admin Panel Section -->
+            <section id="admin" class="section hidden p-6">
+                <div class="max-w-6xl mx-auto">
+                    <!-- Header -->
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-bold text-foreground mb-2">Admin Panel</h2>
+                        <p class="text-muted-foreground">Manage scoring rules, weights, and system settings</p>
+                    </div>
+
+                    <!-- Admin Cards -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <!-- Scoring Rules -->
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <h3 class="text-lg font-semibold text-foreground mb-6 flex items-center">
+                                <i class="fas fa-sliders-h mr-3 text-primary"></i>
+                                Category Weights
+                            </h3>
+                            
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-foreground">Engine</label>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="range" min="0" max="50" value="40" class="w-24" data-bind="weights.engine">
+                                        <span class="text-sm text-muted-foreground w-12" data-bind="weights.engine">40%</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-foreground">Frame</label>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="range" min="0" max="30" value="15" class="w-24" data-bind="weights.frame">
+                                        <span class="text-sm text-muted-foreground w-12" data-bind="weights.frame">15%</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-foreground">Suspension</label>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="range" min="0" max="20" value="10" class="w-24" data-bind="weights.suspension">
+                                        <span class="text-sm text-muted-foreground w-12" data-bind="weights.suspension">10%</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-foreground">Brakes</label>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="range" min="0" max="20" value="10" class="w-24" data-bind="weights.brakes">
+                                        <span class="text-sm text-muted-foreground w-12" data-bind="weights.brakes">10%</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-foreground">Tires</label>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="range" min="0" max="20" value="10" class="w-24" data-bind="weights.tires">
+                                        <span class="text-sm text-muted-foreground w-12" data-bind="weights.tires">10%</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-foreground">Body/Exterior</label>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="range" min="0" max="15" value="8" class="w-24" data-bind="weights.body">
+                                        <span class="text-sm text-muted-foreground w-12" data-bind="weights.body">8%</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-foreground">Electricals</label>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="range" min="0" max="10" value="5" class="w-24" data-bind="weights.electricals">
+                                        <span class="text-sm text-muted-foreground w-12" data-bind="weights.electricals">5%</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium text-foreground">Documents</label>
+                                    <div class="flex items-center space-x-3">
+                                        <input type="range" min="0" max="5" value="2" class="w-24" data-bind="weights.documents">
+                                        <span class="text-sm text-muted-foreground w-12" data-bind="weights.documents">2%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button class="w-full mt-6 bg-primary text-primary-foreground px-4 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors" data-implementation="Save weight changes">
+                                Save Weight Changes
+                            </button>
+                        </div>
+
+                        <!-- Penalty Rules -->
+                        <div class="bg-card rounded-lg border border-border p-6">
+                            <h3 class="text-lg font-semibold text-foreground mb-6 flex items-center">
+                                <i class="fas fa-exclamation-triangle mr-3 text-primary"></i>
+                                Penalty Rules
+                            </h3>
+                            
+                            <div class="space-y-6">
+                                <div>
+                                    <h4 class="text-sm font-semibold text-foreground mb-3">Engine Issues</h4>
+                                    <div class="space-y-2 text-sm">
+                                        <div class="flex justify-between">
+                                            <span class="text-muted-foreground">Minor Oil Leak</span>
+                                            <input type="number" step="0.1" value="0.5" class="w-16 px-2 py-1 text-xs bg-input border border-border rounded" data-bind="penalties.engine.minorOilLeak">
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-muted-foreground">Major Oil Leak</span>
+                                            <input type="number" step="0.1" value="1.5" class="w-16 px-2 py-1 text-xs bg-input border border-border rounded" data-bind="penalties.engine.majorOilLeak">
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-muted-foreground">Heavy Smoke</span>
+                                            <input type="number" step="0.1" value="2.0" class="w-16 px-2 py-1 text-xs bg-input border border-border rounded" data-bind="penalties.engine.heavySmoke">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 class="text-sm font-semibold text-foreground mb-3">Frame Issues</h4>
+                                    <div class="space-y-2 text-sm">
+                                        <div class="flex justify-between">
+                                            <span class="text-muted-foreground">Frame Cracks</span>
+                                            <input type="number" step="0.1" value="3.0" class="w-16 px-2 py-1 text-xs bg-input border border-border rounded" data-bind="penalties.frame.cracks">
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-muted-foreground">Frame Bends</span>
+                                            <input type="number" step="0.1" value="2.5" class="w-16 px-2 py-1 text-xs bg-input border border-border rounded" data-bind="penalties.frame.bends">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 class="text-sm font-semibold text-foreground mb-3">Body Issues</h4>
+                                    <div class="space-y-2 text-sm">
+                                        <div class="flex justify-between">
+                                            <span class="text-muted-foreground">Minor Scratch (each)</span>
+                                            <input type="number" step="0.05" value="0.1" class="w-16 px-2 py-1 text-xs bg-input border border-border rounded" data-bind="penalties.body.minorScratch">
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-muted-foreground">Major Scratch (each)</span>
+                                            <input type="number" step="0.1" value="0.3" class="w-16 px-2 py-1 text-xs bg-input border border-border rounded" data-bind="penalties.body.majorScratch">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button class="w-full mt-6 bg-secondary text-secondary-foreground px-4 py-3 rounded-lg font-medium hover:bg-secondary/90 transition-colors" data-implementation="Save penalty rules">
+                                Save Penalty Rules
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Market Baselines -->
+                    <div class="bg-card rounded-lg border border-border p-6">
+                        <h3 class="text-lg font-semibold text-foreground mb-6 flex items-center">
+                            <i class="fas fa-chart-line mr-3 text-primary"></i>
+                            Market Value Baselines
+                        </h3>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b border-border">
+                                        <th class="text-left py-3 px-4 font-medium text-foreground">Make/Model</th>
+                                        <th class="text-left py-3 px-4 font-medium text-foreground">Year Range</th>
+                                        <th class="text-left py-3 px-4 font-medium text-foreground">Baseline Value (PKR)</th>
+                                        <th class="text-left py-3 px-4 font-medium text-foreground">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- @MAP: marketBaselines.map(baseline => ( -->
+                                    <tr class="border-b border-border">
+                                        <td class="py-3 px-4" data-bind="baseline.model">Honda CB150F</td>
+                                        <td class="py-3 px-4" data-bind="baseline.yearRange">2018-2024</td>
+                                        <td class="py-3 px-4">
+                                            <input type="number" class="w-24 px-2 py-1 bg-input border border-border rounded text-xs" value="250000" data-bind="baseline.value">
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <button class="text-primary hover:text-primary/80 text-xs mr-2" data-implementation="Edit baseline">Edit</button>
+                                            <button class="text-error hover:text-error/80 text-xs" data-implementation="Delete baseline">Delete</button>
+                                        </td>
+                                    </tr>
+                                    
+                                    <tr class="border-b border-border">
+                                        <td class="py-3 px-4" data-bind="baseline.model">Yamaha YBR125</td>
+                                        <td class="py-3 px-4" data-bind="baseline.yearRange">2015-2024</td>
+                                        <td class="py-3 px-4">
+                                            <input type="number" class="w-24 px-2 py-1 bg-input border border-border rounded text-xs" value="180000" data-bind="baseline.value">
+                                        </td>
+                                        <td class="py-3 px-4">
+                                            <button class="text-primary hover:text-primary/80 text-xs mr-2" data-implementation="Edit baseline">Edit</button>
+                                            <button class="text-error hover:text-error/80 text-xs" data-implementation="Delete baseline">Delete</button>
+                                        </td>
+                                    </tr>
+                                    <!-- @END_MAP )) -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <button class="mt-6 bg-accent text-accent-foreground px-4 py-2 rounded-lg font-medium hover:bg-accent/80 transition-colors" data-implementation="Add new baseline">
+                            <i class="fas fa-plus mr-2"></i>
+                            Add New Baseline
+                        </button>
+                    </div>
+                </div>
+            </section>
+            <!-- @END_COMPONENT: Admin Panel -->
+
+            <!-- Other sections (history, reports, profile) would be implemented similarly -->
+            <section id="history" class="section hidden p-6">
+                <div class="max-w-6xl mx-auto">
+                    <h2 class="text-3xl font-bold text-foreground mb-8">Inspection History</h2>
+                    <p class="text-muted-foreground mb-8">Search and view past inspections</p>
+                    
+                    <!-- Search and filters would go here -->
+                    <div class="bg-card rounded-lg border border-border p-6">
+                        <div class="text-center py-12">
+                            <i class="fas fa-search text-6xl text-muted-foreground mb-4"></i>
+                            <h3 class="text-lg font-medium text-foreground mb-2">Search Feature</h3>
+                            <p class="text-muted-foreground">History search functionality would be implemented here</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="reports" class="section hidden p-6">
+                <div class="max-w-6xl mx-auto">
+                    <h2 class="text-3xl font-bold text-foreground mb-8">Reports</h2>
+                    <p class="text-muted-foreground mb-8">Generate and download inspection reports</p>
+                    
+                    <div class="bg-card rounded-lg border border-border p-6">
+                        <div class="text-center py-12">
+                            <i class="fas fa-file-pdf text-6xl text-muted-foreground mb-4"></i>
+                            <h3 class="text-lg font-medium text-foreground mb-2">Report Generation</h3>
+                            <p class="text-muted-foreground">PDF report generation functionality would be implemented here</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="profile" class="section hidden p-6">
+                <div class="max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-bold text-foreground mb-8">Profile Settings</h2>
+                    <p class="text-muted-foreground mb-8">Manage your account and preferences</p>
+                    
+                    <div class="bg-card rounded-lg border border-border p-6">
+                        <div class="text-center py-12">
+                            <i class="fas fa-user-cog text-6xl text-muted-foreground mb-4"></i>
+                            <h3 class="text-lg font-medium text-foreground mb-2">Profile Management</h3>
+                            <p class="text-muted-foreground">User profile settings would be implemented here</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <!-- @END_COMPONENT: AppLayout -->
+
+    <!-- Overlay for mobile sidebar -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
+
+    <script>
+        // TODO: Implement business logic, API calls, and state management
+        
+        // Theme Management
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.className = 'fas fa-moon';
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                icon.className = 'fas fa-sun';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Initialize theme
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').className = 'fas fa-sun';
+            }
+        })();
+
+        // Sidebar Management
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            sidebar.classList.toggle('sidebar-hidden');
+            overlay.classList.toggle('hidden');
+        }
+
+        // Section Navigation
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionId).classList.remove('hidden');
+            
+            // Update navigation active state
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('bg-primary', 'text-primary-foreground');
+                item.classList.add('text-muted-foreground');
+            });
+            
+            document.querySelector(`[onclick="showSection('${sectionId}')"]`).classList.remove('text-muted-foreground');
+            document.querySelector(`[onclick="showSection('${sectionId}')"]`).classList.add('bg-primary', 'text-primary-foreground');
+            
+            // Close sidebar on mobile after navigation
+            if (window.innerWidth < 768) {
+                toggleSidebar();
+            }
+            
+            // Initialize charts for results section
+            if (sectionId === 'results') {
+                initializeCharts();
+            }
+        }
+
+        // Chart Initialization
+        function initializeCharts() {
+            // @FUNCTIONALITY: This would implement actual chart rendering using Chart.js
+            
+            // Mock data for demonstration
+            const componentScores = {
+                Engine: 7.5,
+                Frame: 9.0,
+                Suspension: 8.5,
+                Brakes: 6.2,
+                Tires: 7.0,
+                Electricals: 9.5,
+                Body: 6.8,
+                Documents: 10.0
+            };
+
+            // Initialize gauge chart (would use actual gauge library)
+            const gaugeCtx = document.getElementById('scoreGauge');
+            if (gaugeCtx) {
+                // TODO: Implement speedometer-style gauge chart
+                console.log('Gauge chart would be initialized here');
+            }
+
+            // Initialize radar chart
+            const radarCtx = document.getElementById('radarChart');
+            if (radarCtx && typeof Chart !== 'undefined') {
+                new Chart(radarCtx, {
+                    type: 'radar',
+                    data: {
+                        labels: Object.keys(componentScores),
+                        datasets: [{
+                            label: 'Component Scores',
+                            data: Object.values(componentScores),
+                            backgroundColor: 'rgba(25, 118, 210, 0.2)',
+                            borderColor: 'rgba(25, 118, 210, 1)',
+                            pointBackgroundColor: 'rgba(25, 118, 210, 1)',
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 10
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Initialize bar chart
+            const barCtx = document.getElementById('barChart');
+            if (barCtx && typeof Chart !== 'undefined') {
+                new Chart(barCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(componentScores),
+                        datasets: [{
+                            label: 'Scores',
+                            data: Object.values(componentScores),
+                            backgroundColor: Object.values(componentScores).map(score => {
+                                if (score >= 8) return 'rgba(76, 175, 80, 0.8)'; // Green
+                                if (score >= 5) return 'rgba(255, 152, 0, 0.8)'; // Orange  
+                                return 'rgba(244, 67, 54, 0.8)'; // Red
+                            }),
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 10
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize dashboard as default view
+        document.addEventListener('DOMContentLoaded', function() {
+            showSection('dashboard');
+        });
+
+        // Form submission handling
+        function handleInspectionSubmit(event) {
+            event.preventDefault();
+            // TODO: Implement form validation and submission
+            showSection('results');
+        }
+
+        // Responsive handling
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 768) {
+                document.getElementById('sidebar-overlay').classList.add('hidden');
+                document.getElementById('sidebar').classList.remove('sidebar-hidden');
+            }
+        });
+    </script>
+</body>
+</html>
