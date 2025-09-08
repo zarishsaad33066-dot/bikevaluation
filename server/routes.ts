@@ -92,25 +92,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/inspections', isAuthenticated, async (req: any, res) => {
     try {
       const inspectorId = req.user.claims.sub;
+      const isDraft = req.body.status === 'draft';
       
-      // Calculate scores based on inspection data
-      const scores = calculateInspectionScores(req.body);
-      
-      // Calculate market valuation
-      const valuation = await calculateMarketValuation(req.body.make, req.body.model, req.body.year, scores.finalScore);
-
-      const validatedData = insertInspectionSchema.parse({
+      let inspectionData = {
         ...req.body,
         inspectorId,
-        ...scores,
-        ...valuation,
-        status: 'completed',
-      });
+      };
 
+      // Only calculate scores and valuation for completed inspections
+      if (!isDraft) {
+        // Calculate scores based on inspection data
+        const scores = calculateInspectionScores(req.body);
+        
+        // Calculate market valuation
+        const valuation = await calculateMarketValuation(req.body.make, req.body.model, req.body.year, scores.finalScore);
+        
+        inspectionData = {
+          ...inspectionData,
+          ...scores,
+          ...valuation,
+          status: 'completed',
+        };
+      } else {
+        // For drafts, set default scores and valuation
+        inspectionData = {
+          ...inspectionData,
+          engineScore: null,
+          frameScore: null,
+          suspensionScore: null,
+          brakesScore: null,
+          tiresScore: null,
+          electricalsScore: null,
+          bodyScore: null,
+          documentsScore: null,
+          finalScore: null,
+          marketBaseline: null,
+          estimatedValue: null,
+          status: 'draft',
+        };
+      }
+
+      const validatedData = insertInspectionSchema.parse(inspectionData);
       const inspection = await storage.createInspection(validatedData);
       res.json(inspection);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Validation errors:", error.errors);
         return res.status(400).json({ message: "Invalid inspection data", errors: error.errors });
       }
       console.error("Error creating inspection:", error);
