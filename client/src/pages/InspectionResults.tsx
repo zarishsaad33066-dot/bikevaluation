@@ -163,25 +163,27 @@ export default function InspectionResults() {
   };
 
   const categoryScores = [
-    { name: "Engine", score: inspection.engineScore, weight: 40 },
-    { name: "Frame", score: inspection.frameScore, weight: 15 },
-    { name: "Suspension", score: inspection.suspensionScore, weight: 10 },
-    { name: "Brakes", score: inspection.brakesScore, weight: 10 },
-    { name: "Tires", score: inspection.tiresScore, weight: 10 },
-    { name: "Electricals", score: inspection.electricalsScore, weight: 5 },
-    { name: "Body", score: inspection.bodyScore, weight: 8 },
-    { name: "Documents", score: inspection.documentsScore, weight: 2 },
+    { name: "Engine", score: inspection.engineScore ?? 0, weight: 40 },
+    { name: "Frame", score: inspection.frameScore ?? 0, weight: 15 },
+    { name: "Suspension", score: inspection.suspensionScore ?? 0, weight: 10 },
+    { name: "Brakes", score: inspection.brakesScore ?? 0, weight: 10 },
+    { name: "Tires", score: inspection.tiresScore ?? 0, weight: 10 },
+    { name: "Electricals", score: inspection.electricalsScore ?? 0, weight: 5 },
+    { name: "Body", score: inspection.bodyScore ?? 0, weight: 8 },
+    { name: "Documents", score: inspection.documentsScore ?? 0, weight: 2 },
   ];
 
-  const conditionAdjustment = ((inspection.finalScore / 10) - 1) * 100;
+  const conditionAdjustment = inspection.finalScore ? (((inspection.finalScore / 10) - 1) * 100) : 0;
 
-  const majorIssues = categoryScores
-    .filter(cat => cat.score < 7)
-    .map(cat => ({
-      category: cat.name,
-      score: cat.score,
-      deduction: 10 - cat.score,
-    }));
+  const majorIssues = inspection.status === 'completed' 
+    ? categoryScores
+        .filter(cat => cat.score < 7)
+        .map(cat => ({
+          category: cat.name,
+          score: cat.score,
+          deduction: 10 - cat.score,
+        }))
+    : [];
 
   return (
     <div className="max-w-4xl mx-auto space-y-8" data-testid="inspection-results-page">
@@ -205,7 +207,7 @@ export default function InspectionResults() {
       <Card className="text-center" data-testid="card-score-summary">
         <CardContent className="p-8">
           <div className="mb-6">
-            <ScoreGauge score={inspection.finalScore} size="lg" data-testid="final-score-gauge" />
+            <ScoreGauge score={inspection.finalScore ?? 0} size="lg" data-testid="final-score-gauge" />
           </div>
           
           <h2 className="text-2xl font-bold text-foreground mb-2">Inspection Complete</h2>
@@ -218,14 +220,23 @@ export default function InspectionResults() {
           
           <div className={cn(
             "inline-flex items-center gap-2 px-4 py-2 rounded-full font-medium",
-            getConditionColor(inspection.finalScore)
+            inspection.status === 'draft' 
+              ? "text-blue-600 bg-blue-50 dark:bg-blue-900/20"
+              : getConditionColor(inspection.finalScore ?? 0)
           )} data-testid="condition-badge">
-            {inspection.finalScore >= 8 ? (
+            {inspection.status === 'draft' ? (
+              <AlertTriangle className="w-4 h-4" />
+            ) : (inspection.finalScore ?? 0) >= 8 ? (
               <CheckCircle className="w-4 h-4" />
             ) : (
               <AlertTriangle className="w-4 h-4" />
             )}
-            <span>{getConditionText(inspection.finalScore)}</span>
+            <span>
+              {inspection.status === 'draft' 
+                ? 'Draft - Incomplete Inspection' 
+                : getConditionText(inspection.finalScore ?? 0)
+              }
+            </span>
           </div>
         </CardContent>
       </Card>
@@ -251,14 +262,19 @@ export default function InspectionResults() {
                       {category.name} ({category.weight}%)
                     </span>
                     <span 
-                      className={cn("text-sm font-medium", getScoreColor(category.score))}
+                      className={cn(
+                        "text-sm font-medium", 
+                        inspection.status === 'draft' 
+                          ? "text-muted-foreground" 
+                          : getScoreColor(category.score)
+                      )}
                       data-testid={`score-${category.name.toLowerCase()}`}
                     >
-                      {category.score.toFixed(1)}
+                      {inspection.status === 'draft' ? 'N/A' : category.score.toFixed(1)}
                     </span>
                   </div>
                   <Progress 
-                    value={(category.score / 10) * 100} 
+                    value={inspection.status === 'draft' ? 0 : (category.score / 10) * 100} 
                     className="h-2"
                     data-testid={`progress-${category.name.toLowerCase()}`}
                   />
@@ -281,37 +297,51 @@ export default function InspectionResults() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4" data-testid="valuation-details">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Market Baseline</span>
-                <span className="font-medium text-foreground" data-testid="market-baseline">
-                  {formatCurrency(inspection.marketBaseline)}
-                </span>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Condition Adjustment</span>
-                <span 
-                  className={cn(
-                    "font-medium",
-                    conditionAdjustment >= 0 ? "text-green-600" : "text-red-600"
-                  )}
-                  data-testid="condition-adjustment"
-                >
-                  {conditionAdjustment > 0 ? "+" : ""}{conditionAdjustment.toFixed(1)}%
-                </span>
-              </div>
-              
-              <div className="border-t border-border pt-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold text-foreground">Estimated Value</span>
-                  <span 
-                    className="text-xl font-bold text-primary" 
-                    data-testid="estimated-value"
-                  >
-                    {formatCurrency(inspection.estimatedValue)}
-                  </span>
+              {inspection.status === 'draft' ? (
+                <div className="text-center py-8">
+                  <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">
+                    Valuation Pending
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Complete the inspection to see market valuation
+                  </p>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Market Baseline</span>
+                    <span className="font-medium text-foreground" data-testid="market-baseline">
+                      {formatCurrency(inspection.marketBaseline ?? 0)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Condition Adjustment</span>
+                    <span 
+                      className={cn(
+                        "font-medium",
+                        conditionAdjustment >= 0 ? "text-green-600" : "text-red-600"
+                      )}
+                      data-testid="condition-adjustment"
+                    >
+                      {conditionAdjustment > 0 ? "+" : ""}{conditionAdjustment.toFixed(1)}%
+                    </span>
+                  </div>
+                  
+                  <div className="border-t border-border pt-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-semibold text-foreground">Estimated Value</span>
+                      <span 
+                        className="text-xl font-bold text-primary" 
+                        data-testid="estimated-value"
+                      >
+                        {formatCurrency(inspection.estimatedValue ?? 0)}
+                      </span>
+                    </div>
+                  </div>
+                </>
+              )}
               
               <div className="mt-4 p-3 bg-muted/50 rounded-lg">
                 <p className="text-xs text-muted-foreground">

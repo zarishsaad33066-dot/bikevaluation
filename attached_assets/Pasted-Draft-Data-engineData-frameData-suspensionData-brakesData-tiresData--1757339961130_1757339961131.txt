@@ -1,0 +1,35 @@
+Draft Data: 
+{engineData: {…}, frameData: {…}, suspensionData: {…}, brakesData: {…}, tiresData: {…}, …}
+InspectionResults.tsx:257 Uncaught TypeError: Cannot read properties of undefined (reading 'toFixed')
+    at InspectionResults.tsx:257:39
+    at Array.map (<anonymous>)
+    at InspectionResults (InspectionResults.tsx:247:31)
+
+InspectionResults.tsx:257 Uncaught TypeError: Cannot read properties of undefined (reading 'toFixed')
+    at InspectionResults.tsx:257:39
+    at Array.map (<anonymous>)
+    at InspectionResults (InspectionResults.tsx:247:31)
+Console.js:61 The above error occurred in the <InspectionResults> component:
+
+    at InspectionResults (https://64ffb541-f767-4ff8-ae12-f9ae81301962-00-2lcp43n4ylp27.worf.replit.dev/src/pages/InspectionResults.tsx:42:18)
+    at Route (https://64ffb541-f767-4ff8-ae12-f9ae81301962-00-2lcp43n4ylp27.worf.replit.d…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=5442cdc0:323:16)
+    at div
+    at main
+    at div
+    at Layout (https://64ffb541-f767-4ff8-ae12-f9ae81301962-00-2lcp43n4ylp27.worf.replit.dev/src/components/Layout.tsx:37:34)
+    at Switch (https://64ffb541-f767-4ff8-ae12-f9ae81301962-00-2lcp43n4ylp27.worf.replit.d…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=5442cdc0:379:17)
+    at Router (https://64ffb541-f767-4ff8-ae12-f9ae81301962-00-2lcp43n4ylp27.worf.replit.dev/src/App.tsx?v=TR-IOLnPMCUwCsbVSkL96:38:42)
+    at Provider (https://64ffb541-f767-4ff8-ae12-f9ae81301962-00-2lcp43n4ylp27.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-UBQ2LXDH.js?v=5442cdc0:22:15)
+    at TooltipProvider (https://64ffb541-f767-4ff8-ae12-f9ae81301962-00-2lcp43n4ylp27.worf.replit.d…rkspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=5442cdc0:59:5)
+    at ThemeProvider (https://64ffb541-f767-4ff8-ae12-f9ae81301962-00-2lcp43n4ylp27.worf.replit.dev/src/components/ThemeProvider.tsx:20:33)
+    at QueryClientProvider (https://64ffb541-f767-4ff8-ae12-f9ae81301962-00-2lcp43n4ylp27.worf.replit.d…rkspace/node_modules/.vite/deps/@tanstack_react-query.js?v=5442cdc0:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+chunk-RPCDYKBN.js?v=5442cdc0:9129 Uncaught TypeError: Cannot read properties of undefined (reading 'toFixed')
+    at InspectionResults.tsx:257:39
+    at Array.map (<anonymous>)
+    at InspectionResults (InspectionResults.tsx:247:31)
+(anonymous)	@	InspectionResults.tsx:257
+InspectionResults	@	InspectionResults.tsx:247
