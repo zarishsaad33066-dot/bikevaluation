@@ -50,7 +50,7 @@ interface InspectionResult {
     firstName?: string;
     lastName?: string;
     email?: string;
-  };
+  } | null;
 }
 
 export default function InspectionResults() {
@@ -424,7 +424,7 @@ export default function InspectionResults() {
             <div>
               <p className="text-sm text-muted-foreground">Inspector</p>
               <p className="font-medium text-foreground">
-                {inspection.inspector.firstName || inspection.inspector.email}
+                {inspection.inspector?.firstName || inspection.inspector?.email || 'Unknown Inspector'}
               </p>
             </div>
             

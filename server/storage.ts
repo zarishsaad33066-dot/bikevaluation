@@ -33,10 +33,10 @@ export interface IStorage {
   // Inspection operations
   createInspection(inspection: InsertInspection): Promise<Inspection>;
   updateInspection(id: string, inspection: Partial<InsertInspection>): Promise<Inspection>;
-  getInspection(id: string): Promise<(Inspection & { inspector: User }) | undefined>;
-  getUserInspections(userId: string, limit?: number): Promise<(Inspection & { inspector: User })[]>;
-  getAllInspections(limit?: number): Promise<(Inspection & { inspector: User })[]>;
-  searchInspections(query: string): Promise<(Inspection & { inspector: User })[]>;
+  getInspection(id: string): Promise<(Inspection & { inspector: User | null }) | undefined>;
+  getUserInspections(userId: string, limit?: number): Promise<(Inspection & { inspector: User | null })[]>;
+  getAllInspections(limit?: number): Promise<(Inspection & { inspector: User | null })[]>;
+  searchInspections(query: string): Promise<(Inspection & { inspector: User | null })[]>;
   getInspectionStats(userId?: string): Promise<{
     total: number;
     thisMonth: number;
@@ -122,7 +122,7 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async getInspection(id: string): Promise<(Inspection & { inspector: User }) | undefined> {
+  async getInspection(id: string): Promise<(Inspection & { inspector: User | null }) | undefined> {
     const [result] = await db
       .select()
       .from(inspections)
@@ -133,11 +133,11 @@ export class DatabaseStorage implements IStorage {
 
     return {
       ...result.inspections,
-      inspector: result.users!,
+      inspector: result.users,
     };
   }
 
-  async getUserInspections(userId: string, limit = 50): Promise<(Inspection & { inspector: User })[]> {
+  async getUserInspections(userId: string, limit = 50): Promise<(Inspection & { inspector: User | null })[]> {
     const results = await db
       .select()
       .from(inspections)
@@ -148,11 +148,11 @@ export class DatabaseStorage implements IStorage {
 
     return results.map(({ inspections: inspection, users: inspector }) => ({
       ...inspection,
-      inspector: inspector!,
+      inspector: inspector,
     }));
   }
 
-  async getAllInspections(limit = 100): Promise<(Inspection & { inspector: User })[]> {
+  async getAllInspections(limit = 100): Promise<(Inspection & { inspector: User | null })[]> {
     const results = await db
       .select()
       .from(inspections)
@@ -162,11 +162,11 @@ export class DatabaseStorage implements IStorage {
 
     return results.map(({ inspections: inspection, users: inspector }) => ({
       ...inspection,
-      inspector: inspector!,
+      inspector: inspector,
     }));
   }
 
-  async searchInspections(query: string): Promise<(Inspection & { inspector: User })[]> {
+  async searchInspections(query: string): Promise<(Inspection & { inspector: User | null })[]> {
     const results = await db
       .select()
       .from(inspections)
@@ -182,7 +182,7 @@ export class DatabaseStorage implements IStorage {
 
     return results.map(({ inspections: inspection, users: inspector }) => ({
       ...inspection,
-      inspector: inspector!,
+      inspector: inspector,
     }));
   }
 
